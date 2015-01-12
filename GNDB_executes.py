@@ -120,6 +120,7 @@ def Make_NT(num_NT):
     if str(num_NT) in dic_NT.keys():
         return dic_NT[str(num_NT)]
     else:
+        print "dic too short, missing:", str(num_NT)
         return "GNDB="+str(num_NT)    
 
 # ====== Individual Tools Execute functions ===================================
@@ -195,7 +196,7 @@ def GNDBruninTOC_execute(parameters, messages):
     dic_GNDB = dict()
     arcpy.SelectLayerByAttribute_management (lay_gndb, "CLEAR_SELECTION") # Make sure no records are selected
     # Handled by the cursor # lay_gndb.definitionQuery = "TO_DATE IS NULL"  # Excluding obsolete records
-    lst_fields = ["GST_NID", "NAMETYPE", "GST_GL_name", "GST_DK_name", "GST_UK_name", "NIS_EDITOR_COMMENT", "SHAPE@XY"]
+    lst_fields = ["NID", "NAMETYPE", "GST_GL_name", "GST_DK_name", "GST_UK_name", "SHAPE@XY"]
     try:
         #with arcpy.da.SearchCursor(lay_gndb, lst_fields, "TO_DATE IS NULL and NAME_GREENLAND_NEW = 'Nuuk'") as cursor:
         with arcpy.da.SearchCursor(lay_gndb, lst_fields, "TO_DATE IS NULL") as cursor: # if TO_DATE != NULL then info is obsolete ...
@@ -203,25 +204,25 @@ def GNDBruninTOC_execute(parameters, messages):
                 dic_new = dict()
                 dic_new["NameType"] = row[1]
                 dic_new["Name_GL"] = row[2]
-                dic_new["Name_DK"] = row[4]
-                dic_new["Name_UK"] = row[5]
-                dic_new["XY_tuple"] = row[6]
-                # Clean a little
-                if dic_new["Name_NGL"]:
-                    dic_new["Name_NGL"] = dic_new["Name_NGL"].split("(")[0].strip() # remove anything right of first '('
-                if dic_new["Name_GL"]:
-                    dic_new["Name_GL"] = dic_new["Name_GL"].split("(")[0].strip() # remove anything right of first '('
-                if dic_new["Name_DK"]:
-                    dic_new["Name_DK"] = dic_new["Name_DK"].split("(")[0].strip() # remove anything right of first '('
-                if dic_new["Name_UK"]:
-                    dic_new["Name_UK"] = dic_new["Name_UK"].split("(")[0].strip() # remove anything right of first '('
+                dic_new["Name_DK"] = row[3]
+                dic_new["Name_UK"] = row[4]
+                dic_new["XY_tuple"] = row[5]
+                #===============================================================
+                # # Clean a little
+                # if dic_new["Name_NGL"]:
+                #     dic_new["Name_NGL"] = dic_new["Name_NGL"].split("(")[0].strip() # remove anything right of first '('
+                # if dic_new["Name_GL"]:
+                #     dic_new["Name_GL"] = dic_new["Name_GL"].split("(")[0].strip() # remove anything right of first '('
+                # if dic_new["Name_DK"]:
+                #     dic_new["Name_DK"] = dic_new["Name_DK"].split("(")[0].strip() # remove anything right of first '('
+                # if dic_new["Name_UK"]:
+                #     dic_new["Name_UK"] = dic_new["Name_UK"].split("(")[0].strip() # remove anything right of first '('
+                #===============================================================
                 dic_GNDB[row[0]] = dic_new
                 del dic_new
                 
                 #arcEC.SetMsg("{}".format(row[0]),0)          
                 # Don't try Msg Danish, nor Grenlandic name with strance characters  
-                #arcEC.SetMsg("{0}, {1}, {2}, {3}, {4}, {5}, {6}".format(row[0], row[1], row[2], row[3], row[5], row[6], row[7]),0)   
-                #arcEC.SetMsg("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}".format(row[0], row[1], row[2], row[3], unicode(row[4]), row[5], row[6], row[7]),0)   
     except arcpy.ExecuteError:
         arcpy.AddError("Error 201: arcpy.ExecuteError: "+arcpy.GetMessages(2))
     except Exception as e:
