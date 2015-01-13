@@ -1,3 +1,5 @@
+""" Calculeta the extent of feature classes """
+
 import arcpy  
   
 mxd = arcpy.mapping.MapDocument(r"C:\Martin\Work_Eclipse\BuildGreen\src\All_NIS_layers.mxd")  
