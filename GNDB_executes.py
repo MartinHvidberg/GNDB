@@ -27,12 +27,9 @@
 # ====== Helper functions =====================================================
 
 def CorrectNaming(mode, dicN):
-    bNG = str(type(dicN["Name_NGL"]))=="<type 'unicode'>"
-    if bNG:
-        bNG = len(dicN["Name_NGL"])!=0
-    bOG = str(type(dicN["Name_GL"]))=="<type 'unicode'>"
-    if bOG:
-        bOG = len(dicN["Name_GL"])!=0
+    bGL = str(type(dicN["Name_GL"]))=="<type 'unicode'>"
+    if bGL:
+        bGL = len(dicN["Name_GL"])!=0
     bDA = str(type(dicN["Name_DK"]))=="<type 'unicode'>"
     if bDA:
         bDA = len(dicN["Name_DK"])!=0
@@ -40,19 +37,13 @@ def CorrectNaming(mode, dicN):
     if bEN:
         bEN = len(dicN["Name_UK"])!=0
 
-    ### This section decides the rules for how 4 Potential names is transfered to 2 Place holders ###
+    ### This section decides the rules for how 3 Potential names is transfered to 2 Place holders
+    ### The earlier destinction beween Old and New greenlandiv spelling, is now handled by only maintaining one in GNDB
     strN = ""   # Name
     strL = ""   # Local name
     numS = 999  # Return code. 0 = Success
     if mode == "Berit":
-        if bNG: # If New Greenlandic name exists
-            strN = dicN["Name_NGL"]
-            if bDA: # If Danish name exists
-                strL = dicN["Name_DK"]
-            elif bEN: # If English name exists
-                strL = dicN["Name_UK"]
-            numS = 0
-        elif bOG: # If Old Greenlandic name exists
+        if bGL: # If Greenlandic name exists
             strN = dicN["Name_GL"]
             if bDA: # If Danish name exists
                 strL = dicN["Name_DK"]
@@ -119,7 +110,7 @@ def Make_NT(num_NT):
     if str(num_NT) in dic_NT.keys():
         return dic_NT[str(num_NT)]
     else:
-        print "dic too short, missing:", str(num_NT)
+        arcEC.SetMsg( "dic too short, missing:", str(num_NT), 0)
         return "GNDB="+str(num_NT)    
 
 # ====== Individual Tools Execute functions ===================================
@@ -132,7 +123,7 @@ def GNDBruninTOC_execute(parameters, messages):
 
     strExecuName  = "GNDBruninTOC_execute()"
     strExecuVer   = "0.3.0"
-    strExecuBuild = "'150113,1318"
+    strExecuBuild = "'150113,1351"
 
     timStart = datetime.now()
         
@@ -249,29 +240,32 @@ def GNDBruninTOC_execute(parameters, messages):
                 lstOfficialNames = CorrectNaming(strMode, dic_GNDB[row[0]])
                 OBJNAM_off = encodeIfUnicode(lstOfficialNames[1])
                 NOBJNM_off = encodeIfUnicode(lstOfficialNames[2])
+                OBJNAM_cur = encodeIfUnicode(row[1])
+                NOBJNM_cur = encodeIfUnicode(row[2])
                 arcEC.SetMsg("     GNDB official  : ("+str(OBJNAM_off)+" / "+str(NOBJNM_off)+")",0)
+                arcEC.SetMsg("     GNDB current   : ("+str(OBJNAM_cur)+" / "+str(NOBJNM_cur)+")",0)
                 
                 # * OBJNAM
-                if OBJNAM_off != None and len(OBJNAM_off) > 1: # OBJNAM holds valid data
-                    OBJNAM_cur = encodeIfUnicode(row[1])
-                    if bolOverwrite or OBJNAM_cur == "" or OBJNAM_cur == None: # Edits are allowed
-                        if (OBJNAM_off != OBJNAM_cur) and (OBJNAM_off != None and OBJNAM_off != ""): # There is a need for update...
+                if OBJNAM_off != None and len(OBJNAM_off) > 1: # official OBJNAM is a valid data
+                    if (OBJNAM_off != OBJNAM_cur) and (OBJNAM_off != None and OBJNAM_off != ""): # There is a need for update...
+                        if bolOverwrite or OBJNAM_cur == "" or OBJNAM_cur == None: # Edits are allowed
                             arcEC.SetMsg("      OBJNAM   <<   : "+OBJNAM_cur+" << "+OBJNAM_off,0)
                             row[1] = OBJNAM_off
                             bolChanges = True
                         else:
-                            arcEC.SetMsg("      OBJNAM   ==   : "+OBJNAM_cur,0)
+                            arcEC.SetMsg("      OBJNAM note --> "+OBJNAM_cur+" != "+OBJNAM_off,0)
                             
+
                 #* NOBJNM
-                if NOBJNM_off != None and len(NOBJNM_off) > 1: # NOBJNM holds valid data
-                    NOBJNM_cur = encodeIfUnicode(row[2])
-                    if bolOverwrite or NOBJNM_cur == "" or NOBJNM_cur == None: # Edits are allowed
-                        if (NOBJNM_off != NOBJNM_cur) and (NOBJNM_off != None and NOBJNM_off != ""): # There is a need for update...
+                if NOBJNM_off != None and len(NOBJNM_off) > 1: # official NOBJNM is a valid data
+                    if (NOBJNM_off != NOBJNM_cur) and (NOBJNM_off != None and NOBJNM_off != ""): # There is a need for update...
+                        if bolOverwrite or NOBJNM_cur == "" or NOBJNM_cur == None: # Edits are allowed
                             arcEC.SetMsg("      NOBJNM   <<   : "+NOBJNM_cur+" << "+NOBJNM_off,0)
                             row[2] = NOBJNM_off
                             bolChanges = True
                         else:
-                            arcEC.SetMsg("      NOBJNM   ==   : "+NOBJNM_cur,0)
+                            
+                            arcEC.SetMsg("      NOBJNM note   * "+NOBJNM_cur+" != "+NOBJNM_off,0)
                                             
                 # * NIS_EDITOR_COMMENT
                 NISECo_cur = encodeIfUnicode(row[3])
@@ -294,8 +288,8 @@ def GNDBruninTOC_execute(parameters, messages):
                     # find official GNDB= ...
                     num_NT = row[4]
                     NISECo_off = Make_NT(num_NT)
-                    arcEC.SetMsg("      NISECo   cur  : "+str_GNDB,0)
-                    arcEC.SetMsg("      NISECo   off  : "+NISECo_off,0) 
+                    arcEC.SetMsg("     NISECo   off   : "+NISECo_off,0) 
+                    arcEC.SetMsg("     NISECo   cur   : "+str_GNDB,0)
                     str_new_comm = str_head+NISECo_off+str_tail
                     row[3] = str_new_comm
                     bolChanges = True
