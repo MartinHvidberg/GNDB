@@ -23,6 +23,8 @@
 #    Look for XXX in the code
 #
 #-------------------------------------------------------------
+
+import arcEC
         
 # ====== Helper functions =====================================================
 
@@ -71,7 +73,8 @@ def encodeIfUnicode(strval):
         return strval.encode('ISO-8859-1')
     return str(strval)
 
-dic_NT = {"2" : "GNDB=2 Sø",
+dic_NT = {"1" : "GNDB=2 Sø",
+            "2" : "GNDB=2 Sø",
             "3" : "GNDB=3 Fjord",
             "4" : "GNDB=4 Bugt",
             "5" : "GNDB=5 Hav",
@@ -85,20 +88,36 @@ dic_NT = {"2" : "GNDB=2 Sø",
             "13" : "GNDB=13 Munding",
             "14" : "GNDB=14 Skær",
             "15" : "GNDB=15 Stræde",
+            "16" : "GNDB=16 Tørt",
             "17" : "GNDB=17 Banke",
+            "18" : "GNDB=18 Ankerplads",
+            "19" : "GNDB=19 Sejlløb",
             "21" : "GNDB=21 Isfjord",
+            "25" : "GNDB=25 Bygd",
             "27" : "GNDB=27 Nedlagt bygd",
             "50" : "GNDB=50 Næs/Pynt",
+            "51" : "GNDB=51 Landareal",
             "52" : "GNDB=52 Halvø",
+            "53" : "GNDB=53 Tange",
+            "54" : "GNDB=54 Ødel",
             "57" : "GNDB=57 Klint",
             "60" : "GNDB=60 Fjeld",
             "61" : "GNDB=61 Skråning",
             "62" : "GNDB=62 Dal",
             "63" : "GNDB=63 Forbjerg",
+            "64" : "GNDB=64 Skrænt",
             "65" : "GNDB=65 Kløft",
             "67" : "GNDB=67 Afsats",
             "68" : "GNDB=68 Nunatak",
+            "69" : "GNDB=69 Top",
             "70" : "GNDB=70 Slette",
+            "71" : "GNDB=71 Mose",
+            "72" : "GNDB=72 Moræne",
+            "73" : "GNDB=73 Skred",
+            "76" : "GNDB=76 Delta",
+            "77" : "GNDB=77 Elvmunding",
+            "90" : "GNDB=90 Sten",
+            "92" : "GNDB=92 Rullesten",
             "101" : "GNDB=101 Bjergpas",
             "102" : "GNDB=102 Lavning",
             "110" : "GNDB=110 Isareal",
@@ -107,19 +126,19 @@ dic_NT = {"2" : "GNDB=2 Sø",
             "166" : "GNDB=166 Sommerplads"}
 
 def Make_NT(num_NT):
-    if str(num_NT) in dic_NT.keys():
-        return dic_NT[str(num_NT)]
-    else:
-        arcEC.SetMsg( "dic too short, missing:", str(num_NT), 0)
-        return "GNDB="+str(num_NT)    
+    if num_NT != None:
+        if str(num_NT) in dic_NT.keys():
+            return dic_NT[str(num_NT)]
+        else:
+            arcEC.SetMsg( " !!! dic too short, missing: "+str(num_NT), 0)
+            return "GNDB="+str(num_NT)    
 
 # ====== Individual Tools Execute functions ===================================
 
 def GNDBruninTOC_execute(parameters, messages):
 
     from datetime import datetime # for datetime.now()
-    import arcpy
-    import arcEC
+    #import arcpy # have gone global
 
     strExecuName  = "GNDBruninTOC_execute()"
     strExecuVer   = "0.3.0"
@@ -262,9 +281,8 @@ def GNDBruninTOC_execute(parameters, messages):
                             arcEC.SetMsg("      NOBJNM   <<   : "+NOBJNM_cur+" << "+NOBJNM_off,0)
                             row[2] = NOBJNM_off
                             bolChanges = True
-                        else:
-                            
-                            arcEC.SetMsg("      NOBJNM note   * "+NOBJNM_cur+" != "+NOBJNM_off,0)
+                        else:                            
+                            arcEC.SetMsg("      NOBJNM note --> "+NOBJNM_cur+" != "+NOBJNM_off,0)
                                             
                 # * NIS_EDITOR_COMMENT
                 NISECo_cur = encodeIfUnicode(row[3])
