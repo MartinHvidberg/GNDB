@@ -39,7 +39,6 @@ def CorrectNaming(mode, dicN):
     bEN = str(type(dicN["Name_UK"]))=="<type 'unicode'>"
     if bEN:
         bEN = len(dicN["Name_UK"])!=0
-    #arcEC.SetMsg("     GNDB the bool  : [NG,OG,DA,EN]"+str([bNG,bOG,bDA,bEN]),0)
 
     ### This section decides the rules for how 4 Potential names is transfered to 2 Place holders ###
     strN = ""   # Name
