@@ -203,21 +203,10 @@ def GNDBruninTOC_execute(parameters, messages):
             for row in cursor:
                 dic_new = dict()
                 dic_new["NameType"] = row[1]
-                dic_new["Name_GL"] = row[2]
-                dic_new["Name_DK"] = row[3]
-                dic_new["Name_UK"] = row[4]
+                dic_new["Name_GL"] = row[2].strip()
+                dic_new["Name_DK"] = row[3].strip()
+                dic_new["Name_UK"] = row[4].strip()
                 dic_new["XY_tuple"] = row[5]
-                #===============================================================
-                # # Clean a little
-                # if dic_new["Name_NGL"]:
-                #     dic_new["Name_NGL"] = dic_new["Name_NGL"].split("(")[0].strip() # remove anything right of first '('
-                # if dic_new["Name_GL"]:
-                #     dic_new["Name_GL"] = dic_new["Name_GL"].split("(")[0].strip() # remove anything right of first '('
-                # if dic_new["Name_DK"]:
-                #     dic_new["Name_DK"] = dic_new["Name_DK"].split("(")[0].strip() # remove anything right of first '('
-                # if dic_new["Name_UK"]:
-                #     dic_new["Name_UK"] = dic_new["Name_UK"].split("(")[0].strip() # remove anything right of first '('
-                #===============================================================
                 dic_GNDB[row[0]] = dic_new
                 del dic_new
                 
@@ -245,7 +234,6 @@ def GNDBruninTOC_execute(parameters, messages):
     # *** for each record:
     arcEC.SetMsg("\nRunning through the rows ...",0)
     arcEC.SetMsg("Overwrite: "+str(bolOverwrite),0)
-    # bolOverwrite = True # XXXXXX remove line before release
     
     #try:
     num_row_count = 0
