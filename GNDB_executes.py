@@ -131,8 +131,8 @@ def GNDBruninTOC_execute(parameters, messages):
     import arcEC
 
     strExecuName  = "GNDBruninTOC_execute()"
-    strExecuVer   = "0.2.0"
-    strExecuBuild = "'1410229,1310"
+    strExecuVer   = "0.3.0"
+    strExecuBuild = "'150113,1059"
 
     timStart = datetime.now()
         
@@ -198,13 +198,13 @@ def GNDBruninTOC_execute(parameters, messages):
     lst_fields = ["NID", "NAMETYPE", "GST_GL_name", "GST_DK_name", "GST_UK_name", "SHAPE@XY"]
     try:
         #with arcpy.da.SearchCursor(lay_gndb, lst_fields, "TO_DATE IS NULL and NAME_GREENLAND_NEW = 'Nuuk'") as cursor:
-        with arcpy.da.SearchCursor(lay_gndb, lst_fields, "TO_DATE IS NULL") as cursor: # if TO_DATE != NULL then info is obsolete ...
+        with arcpy.da.SearchCursor(lay_gndb, lst_fields, "NID IS NOT NULL and TO_DATE IS NULL") as cursor: # if TO_DATE != NULL then info is obsolete ...
             for row in cursor:
                 dic_new = dict()
                 dic_new["NameType"] = row[1]
-                dic_new["Name_GL"] = row[2].strip()
-                dic_new["Name_DK"] = row[3].strip()
-                dic_new["Name_UK"] = row[4].strip()
+                dic_new["Name_GL"] = row[2] # don't use .strip() here as object may be None
+                dic_new["Name_DK"] = row[3]
+                dic_new["Name_UK"] = row[4]
                 dic_new["XY_tuple"] = row[5]
                 dic_GNDB[row[0]] = dic_new
                 del dic_new
@@ -216,7 +216,7 @@ def GNDBruninTOC_execute(parameters, messages):
     except Exception as e:
         arcpy.AddError("Error 202: Exception: "+e.args[0])
     
-    arcEC.SetMsg("  - count entries   : "+str(len(dic_GNDB.keys())),0)
+    arcEC.SetMsg("  - count GNDB keys : "+str(len(dic_GNDB.keys())),0)
     #=======================================================================
     # key_samp = "{687F98C5-49AF-44BA-8905-8C2A76CA7EA5}" # <--- This record is known to be free of special characters
     # dic_samp = dic_GNDB[key_samp]
