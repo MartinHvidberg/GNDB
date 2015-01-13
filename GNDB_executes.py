@@ -307,9 +307,13 @@ def GNDBruninTOC_execute(parameters, messages):
                     NISECo_off = Make_NT(num_NT)
                     arcEC.SetMsg("     NISECo   off   : "+NISECo_off,0) 
                     arcEC.SetMsg("     NISECo   cur   : "+str_GNDB,0)
-                    str_new_comm = str_head+NISECo_off+str_tail
-                    row[3] = str_new_comm
-                    bolChanges = True
+                    if str_GNDB != NISECo_off:
+                        str_new_comm = str_head+NISECo_off+str_tail
+                        row[3] = str_new_comm
+                        bolChanges = True
+                        arcEC.SetMsg("      NISeco   <<   : "+str_GNDB+" << "+NISECo_off,0)
+                    else:
+                        arcEC.SetMsg("      NISeco note --> : "+str_GNDB+" != "+NISECo_off,0)
                     
                 # * Write back to row
                 if bolChanges:
