@@ -255,7 +255,6 @@ def GNDBruninTOC_execute(parameters, messages):
                         else:
                             arcEC.SetMsg("      OBJNAM note --> "+OBJNAM_cur+" != "+OBJNAM_off,0)
                             
-
                 #* NOBJNM
                 if NOBJNM_off != None and len(NOBJNM_off) > 1: # official NOBJNM is a valid data
                     if (NOBJNM_off != NOBJNM_cur) and (NOBJNM_off != None and NOBJNM_off != ""): # There is a need for update...
