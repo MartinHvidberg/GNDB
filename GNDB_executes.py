@@ -131,7 +131,9 @@ def Make_NT(num_NT):
             return dic_NT[str(num_NT)]
         else:
             arcEC.SetMsg( " !!! dic too short, missing: "+str(num_NT), 0)
-            return "GNDB="+str(num_NT)    
+            return "GNDB="+str(num_NT)
+    else:
+        return None
 
 # ====== Individual Tools Execute functions ===================================
 
@@ -261,33 +263,34 @@ def GNDBruninTOC_execute(parameters, messages):
                 NOBJNM_off = encodeIfUnicode(lstOfficialNames[2])
                 OBJNAM_cur = encodeIfUnicode(row[1])
                 NOBJNM_cur = encodeIfUnicode(row[2])
-                arcEC.SetMsg("     GNDB official  : ("+str(OBJNAM_off)+" / "+str(NOBJNM_off)+")",0)
-                arcEC.SetMsg("     GNDB current   : ("+str(OBJNAM_cur)+" / "+str(NOBJNM_cur)+")",0)
+                arcEC.SetMsg("     GNDB     off   : ("+str(OBJNAM_off)+" / "+str(NOBJNM_off)+")",0)
+                arcEC.SetMsg("     GNDB     cur   : ("+str(OBJNAM_cur)+" / "+str(NOBJNM_cur)+")",0)
                 
                 # * OBJNAM
                 if OBJNAM_off != None and len(OBJNAM_off) > 1: # official OBJNAM is a valid data
                     if (OBJNAM_off != OBJNAM_cur) and (OBJNAM_off != None and OBJNAM_off != ""): # There is a need for update...
                         if bolOverwrite or OBJNAM_cur == "" or OBJNAM_cur == None: # Edits are allowed
-                            arcEC.SetMsg("      OBJNAM   <<   : "+OBJNAM_cur+" << "+OBJNAM_off,0)
+                            arcEC.SetMsg("     OBJNAM   <<<   : "+OBJNAM_cur+" << "+OBJNAM_off,0)
                             row[1] = OBJNAM_off
                             bolChanges = True
                         else:
-                            arcEC.SetMsg("      OBJNAM note --> "+OBJNAM_cur+" != "+OBJNAM_off,0)
+                            arcEC.SetMsg("     OBJNAM      !!!  "+OBJNAM_cur+" != "+OBJNAM_off,0)
                             
                 #* NOBJNM
                 if NOBJNM_off != None and len(NOBJNM_off) > 1: # official NOBJNM is a valid data
                     if (NOBJNM_off != NOBJNM_cur) and (NOBJNM_off != None and NOBJNM_off != ""): # There is a need for update...
                         if bolOverwrite or NOBJNM_cur == "" or NOBJNM_cur == None: # Edits are allowed
-                            arcEC.SetMsg("      NOBJNM   <<   : "+NOBJNM_cur+" << "+NOBJNM_off,0)
+                            arcEC.SetMsg("     NOBJNM   <<<   : "+NOBJNM_cur+" << "+NOBJNM_off,0)
                             row[2] = NOBJNM_off
                             bolChanges = True
                         else:                            
-                            arcEC.SetMsg("      NOBJNM note --> "+NOBJNM_cur+" != "+NOBJNM_off,0)
+                            arcEC.SetMsg("     NOBJNM      !!!  "+NOBJNM_cur+" != "+NOBJNM_off,0)
                                             
                 # * NIS_EDITOR_COMMENT
                 NISECo_cur = encodeIfUnicode(row[3])
-                # Assuming form "GNDB=13 Munding", i.e. some string + "GNDB=<int> <string>" + more string, so I split tail on ' 's  
+                
                 # search for existing string
+                # Assuming form "GNDB=13 Munding", i.e. some string + "GNDB=<int> <string>" + more string, so I split tail on ' 's  
                 if "GNDB" in NISECo_cur:
                     num_pos1 = NISECo_cur.find("GNDB")    
                     num_poseq = NISECo_cur.find("=",num_pos1)   
@@ -301,19 +304,25 @@ def GNDBruninTOC_execute(parameters, messages):
                     str_head = NISECo_cur[:num_pos1]
                     str_GNDB = NISECo_cur[num_pos1:num_pos2]
                     str_tail = NISECo_cur[num_pos2:]
-                    del num_pos1, num_poseq, num_posfs, num_pos2     
-                    # find official GNDB= ...
-                    num_NT = row[4]
-                    NISECo_off = Make_NT(num_NT)
-                    arcEC.SetMsg("     NISECo   off   : "+NISECo_off,0) 
-                    arcEC.SetMsg("     NISECo   cur   : "+str_GNDB,0)
-                    if str_GNDB != NISECo_off:
-                        str_new_comm = str_head+NISECo_off+str_tail
-                        row[3] = str_new_comm
-                        bolChanges = True
-                        arcEC.SetMsg("      NISeco   <<   : "+str_GNDB+" << "+NISECo_off,0)
-                    else:
-                        arcEC.SetMsg("      NISeco note --> : "+str_GNDB+" != "+NISECo_off,0)
+                    del num_pos1, num_poseq, num_posfs, num_pos2
+                else:
+                    str_head = NISECo_cur
+                    str_GNDB = ""
+                    str_tail = ""
+                    
+                # find official GNDB= ...
+                num_NT = row[4]
+                NISECo_off = Make_NT(num_NT)
+                arcEC.SetMsg("     NISECo   off   : "+NISECo_off,0) 
+                arcEC.SetMsg("     NISECo   cur   : "+str_GNDB,0)
+                if NISECo_off != None and len(NISECo_off) > 1: # official NISECo_off is a valid data
+                    if str_GNDB != NISECo_off: # There is a need for update...
+                        if bolOverwrite or str_GNDB == "" or str_GNDB == None: # Edits are allowed
+                            row[3] = str_head+NISECo_off+str_tail
+                            bolChanges = True
+                            arcEC.SetMsg("     NISECo   <<<   : "+str_GNDB+" << "+NISECo_off,0)
+                        else:
+                            arcEC.SetMsg("     NISECo   !!!   : "+str_GNDB+" != "+NISECo_off,0)
                     
                 # * Write back to row
                 if bolChanges:
