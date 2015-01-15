@@ -256,7 +256,8 @@ def GNDBruninTOC_execute(parameters, messages):
                 bolChanges = False
                 arcEC.SetMsg(" Hit GNDB           : "+str(row[0]),0)
                 
-                # ** Process the row <----------------------------------------- This is where the real business is going on
+                # *** Process the row <----------------------------------------- This is where the real business is going on
+                # ** Handle names (OBJNAM & NOBJNM)
                 # * Calculate the official values from GNDB
                 lstOfficialNames = CorrectNaming(strMode, dic_GNDB[row[0]])
                 OBJNAM_off = encodeIfUnicode(lstOfficialNames[1])
@@ -286,10 +287,10 @@ def GNDBruninTOC_execute(parameters, messages):
                         else:                            
                             arcEC.SetMsg("     NOBJNM      !!!  "+NOBJNM_cur+" != "+NOBJNM_off,0)
                                             
-                # * NIS_EDITOR_COMMENT
+                # ** Handle NIS_EDITOR_COMMENT
                 NISECo_cur = encodeIfUnicode(row[3])
                 
-                # search for existing string
+                # * search for existing string
                 # Assuming form "GNDB=13 Munding", i.e. some string + "GNDB=<int> <string>" + more string, so I split tail on ' 's  
                 if "GNDB" in NISECo_cur:
                     num_pos1 = NISECo_cur.find("GNDB")    
@@ -310,7 +311,7 @@ def GNDBruninTOC_execute(parameters, messages):
                     str_GNDB = ""
                     str_tail = ""
                     
-                # find official GNDB= ...
+                # * find official GNDB= ...
                 num_NT = row[4]
                 NISECo_off = Make_NT(num_NT)
                 arcEC.SetMsg("     NISECo   off   : "+NISECo_off,0) 
@@ -323,6 +324,7 @@ def GNDBruninTOC_execute(parameters, messages):
                             arcEC.SetMsg("     NISECo   <<<   : "+str_GNDB+" << "+NISECo_off,0)
                         else:
                             arcEC.SetMsg("     NISECo   !!!   : "+str_GNDB+" != "+NISECo_off,0)
+                    
                     
                 # * Write back to row
                 if bolChanges:
