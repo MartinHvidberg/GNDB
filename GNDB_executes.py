@@ -238,7 +238,7 @@ def GNDBruninTOC_execute(parameters, messages):
 
     strExecuName  = "GNDBruninTOC_execute()"
     strExecuVer   = "0.3.0"
-    strExecuBuild = "'150115,"
+    strExecuBuild = "'150115,1444"
 
     timStart = datetime.now()
         
