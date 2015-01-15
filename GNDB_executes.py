@@ -331,6 +331,8 @@ def GNDBruninTOC_execute(parameters, messages):
                     cursor.updateRow(row)
                     num_row_changed += 1
                     
+                # *** -------------------------------------------------------------------------- End of real business ------
+                    
             else:
                 arcEC.SetMsg(" !*! No Hit in GNDB : "+str(row[0]),0)
                 
