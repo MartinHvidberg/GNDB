@@ -246,7 +246,6 @@ def GNDBruninTOC_execute(parameters, messages):
     arcEC.SetMsg("\nRunning through the rows ...",0)
     arcEC.SetMsg("Overwrite: "+str(bolOverwrite),0)
     
-    #try:
     num_row_count = 0
     num_row_changed = 0
     with arcpy.da.UpdateCursor(lay_in, lst_fields_we_want, "GST_NID IS NOT NULL") as cursor:
@@ -262,8 +261,10 @@ def GNDBruninTOC_execute(parameters, messages):
                 lstOfficialNames = CorrectNaming(strMode, dic_GNDB[row[0]])
                 OBJNAM_off = encodeIfUnicode(lstOfficialNames[1])
                 NOBJNM_off = encodeIfUnicode(lstOfficialNames[2])
+                # * read current values from GNDB
                 OBJNAM_cur = encodeIfUnicode(row[1])
                 NOBJNM_cur = encodeIfUnicode(row[2])
+                
                 arcEC.SetMsg("     GNDB     off   : ("+str(OBJNAM_off)+" / "+str(NOBJNM_off)+")",0)
                 arcEC.SetMsg("     GNDB     cur   : ("+str(OBJNAM_cur)+" / "+str(NOBJNM_cur)+")",0)
                 
@@ -277,7 +278,7 @@ def GNDBruninTOC_execute(parameters, messages):
                         else:
                             arcEC.SetMsg("     OBJNAM      !!!  "+OBJNAM_cur+" != "+OBJNAM_off,0)
                             
-                #* NOBJNM
+                # * NOBJNM
                 if NOBJNM_off != None and len(NOBJNM_off) > 1: # official NOBJNM is a valid data
                     if (NOBJNM_off != NOBJNM_cur) and (NOBJNM_off != None and NOBJNM_off != ""): # There is a need for update...
                         if bolOverwrite or NOBJNM_cur == "" or NOBJNM_cur == None: # Edits are allowed
@@ -287,10 +288,9 @@ def GNDBruninTOC_execute(parameters, messages):
                         else:                            
                             arcEC.SetMsg("     NOBJNM      !!!  "+NOBJNM_cur+" != "+NOBJNM_off,0)
                                             
-                # ** Handle NIS_EDITOR_COMMENT
-                NISECo_cur = encodeIfUnicode(row[3])
-                
+                # ** Handle NIS_EDITOR_COMMENT       
                 # * search for existing string
+                NISECo_cur = encodeIfUnicode(row[3])         
                 # Assuming form "GNDB=13 Munding", i.e. some string + "GNDB=<int> <string>" + more string, so I split tail on ' 's  
                 if "GNDB" in NISECo_cur:
                     num_pos1 = NISECo_cur.find("GNDB")    
@@ -314,16 +314,20 @@ def GNDBruninTOC_execute(parameters, messages):
                 # * find official GNDB= ...
                 num_NT = row[4]
                 NISECo_off = Make_NT(num_NT)
+                
                 arcEC.SetMsg("     NISECo   off   : "+NISECo_off,0) 
                 arcEC.SetMsg("     NISECo   cur   : "+str_GNDB,0)
+                
+                # * NIS_EDITORS_COMMENT
                 if NISECo_off != None and len(NISECo_off) > 1: # official NISECo_off is a valid data
                     if str_GNDB != NISECo_off: # There is a need for update...
                         if bolOverwrite or str_GNDB == "" or str_GNDB == None: # Edits are allowed
-                            row[3] = str_head+NISECo_off+str_tail
+                            NISECo_new = str_head+NISECo_off+str_tail
+                            row[3] = NISECo_new
                             bolChanges = True
-                            arcEC.SetMsg("     NISECo   <<<   : "+str_GNDB+" << "+NISECo_off,0)
+                            arcEC.SetMsg("     NISECo   <<<   : "+NISECo_cur+" << "+NISECo_new,0)
                         else:
-                            arcEC.SetMsg("     NISECo   !!!   : "+str_GNDB+" != "+NISECo_off,0)
+                            arcEC.SetMsg("     NISECo   !!!   : "+NISECo_cur+" != "+NISECo_new,0)
                     
                     
                 # * Write back to row
