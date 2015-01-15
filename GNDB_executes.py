@@ -305,24 +305,25 @@ def GNDBruninTOC_execute(parameters, messages):
                     str_head = NISECo_cur[:num_pos1]
                     str_GNDB = NISECo_cur[num_pos1:num_pos2]
                     str_tail = NISECo_cur[num_pos2:]
-                    del num_pos1, num_poseq, num_posfs, num_pos2
+                    lst_NISECo_cur = [str_head,str_GNDB,str_tail]
+                    del num_pos1, num_poseq, num_posfs, num_pos2, str_head, str_GNDB, str_tail
                 else:
-                    str_head = NISECo_cur
-                    str_GNDB = ""
-                    str_tail = ""
+                    lst_NISECo_cur = [NISECo_cur,"",""]
                     
                 # * find official GNDB= ...
                 num_NT = row[4]
                 NISECo_off = Make_NT(num_NT)
                 
                 arcEC.SetMsg("     NISECo   off   : "+NISECo_off,0) 
-                arcEC.SetMsg("     NISECo   cur   : "+str_GNDB,0)
+                arcEC.SetMsg("     NISECo   cur   : "+str(lst_NISECo_cur),0)
                 
                 # * NIS_EDITORS_COMMENT
                 if NISECo_off != None and len(NISECo_off) > 1: # official NISECo_off is a valid data
-                    if str_GNDB != NISECo_off: # There is a need for update...
-                        if bolOverwrite or str_GNDB == "" or str_GNDB == None: # Edits are allowed
-                            NISECo_new = str_head+NISECo_off+str_tail
+                    if lst_NISECo_cur[1] != NISECo_off: # There is a need for update...
+                        if bolOverwrite or lst_NISECo_cur[1] == "": # Edits are allowed
+                            lst_NISECo_new = lst_NISECo_cur
+                            lst_NISECo_new[1] = NISECo_off # replace current GNDB with official
+                            NISECo_new = str(lst_NISECo_new)
                             row[3] = NISECo_new
                             bolChanges = True
                             arcEC.SetMsg("     NISECo   <<<   : "+NISECo_cur+" << "+NISECo_new,0)
@@ -331,7 +332,7 @@ def GNDBruninTOC_execute(parameters, messages):
                     
                     
                 # * Write back to row
-                if bolChanges:
+                if False:#bolChanges:
                     cursor.updateRow(row)
                     num_row_changed += 1
                     
