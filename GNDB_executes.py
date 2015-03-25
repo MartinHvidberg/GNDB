@@ -18,7 +18,7 @@
 #        Sceleton works, but no changes written to output, yet.
 #        Obey Selection and obey Definition querries on input data. '141001/mahvi
 #    Ver. 0.2.0 - Splitting execute() into seperate .py file
-#    Ver. 0.3.0 - Introducing 'Lock', and cleaning up smaller things
+#    Ver. 0.3.0 - Introducing 'GST_lock', and cleaning up smaller things
 #
 # ToDo
 #    Look for XXX in the code
@@ -46,6 +46,8 @@ def CorrectNaming(mode, dicN):
     ### The earlier destinction beween Old and New greenlandiv spelling, is now handled by only maintaining one in GNDB
     strNameN = ""   # Name
     strNameL = ""   # Local name
+    bolLockN = False # Unlocked by default
+    bolLockL = False # Unlocked by default
     numS = 999  # Return code. 0 = Success
     if mode == "Berit":
         if bGL: # If Greenlandic name exists
@@ -439,7 +441,6 @@ def GNDBruninTOC_execute(parameters, messages):
                             arcEC.SetMsg("     NISECo   <<<   : " + NISECo_cur + " << "+NISECo_new,0)
                         else:
                             arcEC.SetMsg(" !!!203 NISECo c!=n : " + NISECo_cur + " != "+NISECo_new,0)
-                    
                     
                 # *** Write back to row
                 if bolChanges:
