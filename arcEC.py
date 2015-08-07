@@ -4,7 +4,7 @@ import sys
 
 ## Version 1.8 (8 functions) '130213/MaHvi
 
-def SetMsg(msg, severity=0): # 0:Message, 1:Warning, 2:Error
+def SetMsg(msg, severity=0, fil_log=False): # 0:Message, 1:Warning, 2:Error
     print msg
     try:
         for string in msg.split('\n'):
@@ -15,6 +15,10 @@ def SetMsg(msg, severity=0): # 0:Message, 1:Warning, 2:Error
                 arcpy.AddWarning(string)
             elif severity == 2:
                 arcpy.AddError(string)
+    except:
+        pass
+    try:
+        fil_log.write(string+"\n")
     except:
         pass
     

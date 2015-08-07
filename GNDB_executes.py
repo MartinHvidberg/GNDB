@@ -235,9 +235,9 @@ dic_NT = {"0" : "Ukendt",
             "167" : "GNDB=167 Stribe i fjeldet",
             "168" : "GNDB=168 Strømsted",
             "169" : "GNDB=169 Terrasser",
-            "170" : "GNDB=170 ",
-            "171" : "GNDB=171 ",
-            "172" : "GNDB=172 "}
+            "170" : "GNDB=170 Solsiden (Sunny side)",
+            "171" : "GNDB=171 Talus (Scree)",
+            "172" : "GNDB=172 Skyggesiden (Shadow side)"}
 
 
 def Make_NT(num_NT, fil_log):

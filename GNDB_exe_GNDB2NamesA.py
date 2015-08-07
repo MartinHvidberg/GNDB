@@ -25,6 +25,8 @@ import sys
 
 import arcEC
 
+import GNDB_constants
+
 # ====== Helper functions =====================================================
 
 
