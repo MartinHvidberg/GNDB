@@ -109,6 +109,11 @@ def Dict2String(dicIn):
         strReport += str(K)+" : "+str(dicIn[K])+"\n"
     return strReport
 
+def encodeIfUnicode(strval):
+    """Encode if string is unicode."""
+    if isinstance(strval, unicode):
+        return strval.encode('ISO-8859-1')
+    return str(strval)
 
 # Music that accompanied the coding of this script:
 #   Deep Forest - Savana Dance
