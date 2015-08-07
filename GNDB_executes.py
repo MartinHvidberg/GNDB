@@ -6,8 +6,8 @@
 # e-mail:     mahvi@gst.dk, Martin@Hvidberg.net
 # Created:    2014-09-16
 # Copyright:  CopyLeft - I want my humble inventions to be freely available to others ...
-# ArcGIS ver: 10.2.0
-# Python ver: 2.7.3
+# ArcGIS ver: 10.2.0 .. 10.3.0
+# Python ver: 2.7.3 .. 2.7.8
 #
 # Error numbers strategy:
 #    1xx : Fundamental program logic fails
@@ -19,11 +19,17 @@
 #        Obey Selection and obey Definition querries on input data. '141001/mahvi
 #    Ver. 0.2.0 - Splitting execute() into seperate .py file
 #    Ver. 0.3.0 - Introducing 'GST_lock', and cleaning up smaller things
+#    Ver. 0.3.1 - Limiting output to relevant info ...
+#    Ver. 0.3.2 - Introducing logfile
+#    Ver. 0.3.3 - Infroduce Fail-list
+XXX "Don't run this -  I split this script in several smaller scripts... Instead of trying to maintain a script to solve all problems ..."
 #
 # ToDo
 #    Look for XXX in the code
 #
 #-------------------------------------------------------------
+
+import sys
 
 import arcEC
         
@@ -228,15 +234,18 @@ dic_NT = {"0" : "Ukendt",
             "166" : "GNDB=166 Sommerplads",
             "167" : "GNDB=167 Stribe i fjeldet",
             "168" : "GNDB=168 Strømsted",
-            "169" : "GNDB=169 Terrasser"}
+            "169" : "GNDB=169 Terrasser",
+            "170" : "GNDB=170 ",
+            "171" : "GNDB=171 ",
+            "172" : "GNDB=172 "}
 
 
-def Make_NT(num_NT):
+def Make_NT(num_NT, fil_log):
     if num_NT != None:
         if str(num_NT) in dic_NT.keys():
             return dic_NT[str(num_NT)]
         else:
-            arcEC.SetMsg( " !!! dic too short, missing: "+str(num_NT), 0)
+            arcEC.SetMsg( " !!! dic too short, missing: "+str(num_NT), 0, fil_log)
             return "GNDB="+str(num_NT)
     else:
         return None
@@ -249,19 +258,22 @@ def GNDBruninTOC_execute(parameters, messages):
     #import arcpy # have gone global
 
     strExecuName  = "GNDBruninTOC_execute()"
-    strExecuVer   = "0.3.0"
-    strExecuBuild = "'150324,x"
+    strExecuVer   = "0.3.2" # Introducing logfile
+    strExecuBuild = "'150504,x"
 
     timStart = datetime.now()
         
     # *** Begin
-    arcEC.SetMsg("Exec. '"+strExecuName+"' ver. "+strExecuVer+" build "+strExecuBuild,0)
+    fil_log = open("GNDB_execute.log", "w")
+    arcEC.SetMsg("Exec. '"+strExecuName+"' ver. "+strExecuVer+" build "+strExecuBuild+" <"+str(timStart)+">", 0, fil_log)
+    
+    lstFails = list()
     
     # *** Manage input parameters ***
     
     # ** Harvest strings from GUI
     
-    arcEC.SetMsg("GUI said",0)
+    arcEC.SetMsg("GUI said", 0, fil_log)
     try: # this will work when called from a .pyt
         strFC = parameters[0].valueAsText # FeatureClasse(s)
         strGN = parameters[1].valueAsText # GNDB point FC
@@ -276,47 +288,47 @@ def GNDBruninTOC_execute(parameters, messages):
         bolOverwrite = True
     else:
         bolOverwrite = False
-    arcEC.SetMsg(" Feature classe(s)  : "+strFC,0)
-    arcEC.SetMsg(" GNDB table         : "+strGN,0)
-    arcEC.SetMsg(" Mode               : "+strMode,0)
-    arcEC.SetMsg(" Overwrite          : "+str(bolOverwrite),0)
+    arcEC.SetMsg(" Feature classe(s)  : "+strFC, 0, fil_log)
+    arcEC.SetMsg(" GNDB table         : "+strGN, 0, fil_log)
+    arcEC.SetMsg(" Mode               : "+strMode, 0, fil_log)
+    arcEC.SetMsg(" Overwrite          : "+str(bolOverwrite), 0, fil_log)
     
     
     # *** Open Feature Layer(s) ***                
-    arcEC.SetMsg("Open Feature Layer",0)
+    arcEC.SetMsg("Open Feature Layer", 0, fil_log)
     
     # ** find Feature Layer & GNDB
     mxd = arcpy.mapping.MapDocument('CURRENT')
-    #arcEC.SetMsg(" MXD: "+str(mxd),0)
+    #arcEC.SetMsg(" MXD: "+str(mxd), 0, fil_log)
     if (len(arcpy.mapping.ListDataFrames(mxd)) != 1):
-        arcEC.SetMsg("Multiple Data frames... Picking the first one.", 1)
+        arcEC.SetMsg("Multiple Data frames... Picking the first one.", 1, fil_log)
     daf = arcpy.mapping.ListDataFrames(mxd)[0] # Only first data frame is considered, others are ignored... Improve this later XXX
     
     # * find Layer
-    #arcEC.SetMsg(" daf: "+str(daf),0)
+    #arcEC.SetMsg(" daf: "+str(daf), 0, fil_log)
     for lay_i in arcpy.mapping.ListLayers(mxd, "", daf): # list of Layers from the first frame in TOC
         if str(lay_i) in strFC:
-            arcEC.SetMsg(" TOC input layer    : "+str(lay_i),0)
+            arcEC.SetMsg(" TOC input layer    : "+str(lay_i), 0, fil_log)
             lay_in = lay_i
     # XXX show number of records, and number of selected records...    
             
     # * find GNDB
     for lay_i in arcpy.mapping.ListLayers(mxd, "", daf): # list of Layers from the first frame in TOC
         if str(lay_i) in strGN:
-            arcEC.SetMsg(" TOC GNDB           : "+str(lay_i),0)
+            arcEC.SetMsg(" TOC GNDB           : "+str(lay_i), 0, fil_log)
             lay_gndb = lay_i
         
     del lay_i, daf, mxd # Keep lay_in and lay_gndb
 
     
     # *** Load GNDB to memory ***
+    arcEC.SetMsg("Loading GNDB onto memory ... ", 0, fil_log)
     dic_GNDB = dict()
     arcpy.SelectLayerByAttribute_management (lay_gndb, "CLEAR_SELECTION") # Make sure no records are selected
     # Handled by the cursor # lay_gndb.definitionQuery = "TO_DATE IS NULL"  # Excluding obsolete records
-    lst_fields = ["NID", "NAMETYPE", "GST_GL_name", "GST_DK_name", "GST_UK_name", "GST_GSRLOCK", "SHAPE@XY"]
+    lst_fields = ["GST_NID", "NAMETYPE", "GST_GL_NAME", "GST_DK_NAME", "GST_UK_NAME", "GST_GSRLOCK", "SHAPE@XY"]
     try:
-        #with arcpy.da.SearchCursor(lay_gndb, lst_fields, "TO_DATE IS NULL and NAME_GREENLAND_NEW = 'Nuuk'") as cursor:
-        with arcpy.da.SearchCursor(lay_gndb, lst_fields, "NID IS NOT NULL and TO_DATE IS NULL") as cursor: # if TO_DATE != NULL then info is obsolete ...
+        with arcpy.da.SearchCursor(lay_gndb, lst_fields, "GST_NID IS NOT NULL and TO_DATE IS NULL") as cursor: # if TO_DATE != NULL then info is obsolete ...
             for row in cursor:
                 dic_new = dict()
                 dic_new["NameType"] = row[1]
@@ -331,104 +343,110 @@ def GNDBruninTOC_execute(parameters, messages):
         arcpy.AddError("Error 201: arcpy.ExecuteError: "+arcpy.GetMessages(2))
     except Exception as e:
         arcpy.AddError("Error 202: Exception: "+e.args[0])
+        sys.exit()
+    arcEC.SetMsg("Loading GNDB onto memory - Done ", 0, fil_log)
     
-    arcEC.SetMsg("  - count GNDB keys : "+str(len(dic_GNDB.keys())),0)
+    arcEC.SetMsg("  - count GNDB keys : "+str(len(dic_GNDB.keys())), 0, fil_log)
     #=======================================================================
     # key_samp = "{687F98C5-49AF-44BA-8905-8C2A76CA7EA5}" # <--- This record is known to be free of special characters
     # dic_samp = dic_GNDB[key_samp]
-    # arcEC.SetMsg(" - sample           : "+key_samp,0)
-    # arcEC.SetMsg("   - name type      : "+str(dic_samp["NameType"]),0)
-    # arcEC.SetMsg("   - Greenland      : "+str(dic_samp["Name_GL"]),0)
-    # arcEC.SetMsg("   - Danish         : "+str(dic_samp["Name_DK"]),0)
-    # arcEC.SetMsg("   - English        : "+str(dic_samp["Name_UK"]),0)
-    # arcEC.SetMsg("   - X,Y            : "+str(dic_samp["XY_tuple"]),0)
+    # arcEC.SetMsg(" - sample           : "+key_samp, 0, fil_log)
+    # arcEC.SetMsg("   - name type      : "+str(dic_samp["NameType"]), 0, fil_log)
+    # arcEC.SetMsg("   - Greenland      : "+str(dic_samp["Name_GL"]), 0, fil_log)
+    # arcEC.SetMsg("   - Danish         : "+str(dic_samp["Name_DK"]), 0, fil_log)
+    # arcEC.SetMsg("   - English        : "+str(dic_samp["Name_UK"]), 0, fil_log)
+    # arcEC.SetMsg("   - X,Y            : "+str(dic_samp["XY_tuple"]), 0, fil_log)
     #=======================================================================
     
     # *** for each record:
-    arcEC.SetMsg("\nRunning through the rows ...",0)
-    arcEC.SetMsg("Overwrite: "+str(bolOverwrite),0)
+    arcEC.SetMsg("\nRunning through the rows ...", 0, fil_log)
+    arcEC.SetMsg("Overwrite: "+str(bolOverwrite), 0, fil_log)
     lst_fields_we_want = ["GST_NID","OBJNAM","NOBJNM","NIS_EDITOR_COMMENT","NAMETYPE"]
     
     num_row_count = 0
     num_row_changed = 0
     with arcpy.da.UpdateCursor(lay_in, lst_fields_we_want, "GST_NID IS NOT NULL") as cursor:
         for row in cursor:
-            if row[0] in dic_GNDB.keys():
-                num_row_count += 1
-                bolChanges = False
-                arcEC.SetMsg(" Hit GNDB           : "+str(row[0]),0)
+            
+            try:
+                arcEC.SetMsg("Trying    : "+str(row[0]), 0, fil_log)
                 
-                # *** Process the row <----------------------------------------- This is where the real business is going on
-                # ** Handle names (OBJNAM & NOBJNM)
-                # * Calculate the official values from GNDB
-                lstOfficialNames, listOfLocks = CorrectNaming(strMode, dic_GNDB[row[0]])
-                OBJNAM_off = encodeIfUnicode(lstOfficialNames[1])
-                NOBJNM_off = encodeIfUnicode(lstOfficialNames[2])
-                # * read current values from GNDB
-                OBJNAM_cur = encodeIfUnicode(row[1])
-                NOBJNM_cur = encodeIfUnicode(row[2])
-                # Convert all Null's to empty string
-                if OBJNAM_off == "None": OBJNAM_off = ""
-                if NOBJNM_off == "None": NOBJNM_off = ""
-                if OBJNAM_cur == "None": OBJNAM_cur = ""
-                if NOBJNM_cur == "None": NOBJNM_cur = ""                
+                if row[0] in dic_GNDB.keys():
+                    num_row_count += 1
+                    bolChanges = False
+                    arcEC.SetMsg(" Hit GNDB           : "+str(row[0]), 0, fil_log)
                 
-                arcEC.SetMsg("     Name GNDB      : ("+str(OBJNAM_off)+" / "+str(NOBJNM_off)+")",0)
-                arcEC.SetMsg("     Name Names*    : ("+str(OBJNAM_cur)+" / "+str(NOBJNM_cur)+")",0)
+                    # *** Process the row <----------------------------------------- This is where the real business is going on
+                    # ** Handle names (OBJNAM & NOBJNM)
+                    # * Calculate the official values from GNDB
+                    lstOfficialNames, listOfLocks = CorrectNaming(strMode, dic_GNDB[row[0]])
+                    OBJNAM_off = encodeIfUnicode(lstOfficialNames[1])
+                    NOBJNM_off = encodeIfUnicode(lstOfficialNames[2])
+                    # * read current values from GNDB
+                    OBJNAM_cur = encodeIfUnicode(row[1])
+                    NOBJNM_cur = encodeIfUnicode(row[2])
+                    # Convert all Null's to empty string
+                    if OBJNAM_off == "None": OBJNAM_off = ""
+                    if NOBJNM_off == "None": NOBJNM_off = ""
+                    if OBJNAM_cur == "None": OBJNAM_cur = ""
+                    if NOBJNM_cur == "None": NOBJNM_cur = ""                
                 
-                # * OBJNAM
-                if OBJNAM_off != None and len(OBJNAM_off) > 1: # official OBJNAM is a valid data
-                    if (OBJNAM_off != OBJNAM_cur): # There is a need for update...
-                        if bolOverwrite or OBJNAM_cur == "" or OBJNAM_cur == None: # Edits are allowed. XXX introduce 'Lock'
-                            arcEC.SetMsg("     OBJNAM   <<<   : "+OBJNAM_cur+" << "+OBJNAM_off,0)
-                            row[1] = OBJNAM_off
-                            bolChanges = True
+                    arcEC.SetMsg("     Name GNDB      : ("+str(OBJNAM_off)+" / "+str(NOBJNM_off)+")", 0, fil_log)
+                    arcEC.SetMsg("     Name Names*    : ("+str(OBJNAM_cur)+" / "+str(NOBJNM_cur)+")", 0, fil_log)
+                
+                    # * OBJNAM
+                    if OBJNAM_off != None and len(OBJNAM_off) > 1: # official OBJNAM is a valid data
+                        if (OBJNAM_off != OBJNAM_cur): # There is a need for update...
+                            if bolOverwrite or OBJNAM_cur == "" or OBJNAM_cur == None: # Edits are allowed. XXX introduce 'Lock'
+                                arcEC.SetMsg("     OBJNAM   <<<   : "+OBJNAM_cur+" << "+OBJNAM_off, 0, fil_log)
+                                row[1] = OBJNAM_off
+                                bolChanges = True
+                            else:
+                                arcEC.SetMsg("     OBJNAM   !!!201  "+OBJNAM_cur+" != "+OBJNAM_off, 0, fil_log)
+                
+                    # * NOBJNM
+                    if NOBJNM_off != None and len(NOBJNM_off) > 1: # official NOBJNM is a valid data
+                        if (NOBJNM_off != NOBJNM_cur): # There is a need for update...
+                            if bolOverwrite or NOBJNM_cur == "" or NOBJNM_cur == None: # Edits are allowed. XXX introduce 'Lock'
+                                arcEC.SetMsg("     NOBJNM   <<<   : "+NOBJNM_cur+" << "+NOBJNM_off, 0, fil_log)
+                                row[2] = NOBJNM_off
+                                bolChanges = True
+                            else:                            
+                                arcEC.SetMsg("     NOBJNM   !!!202  "+NOBJNM_cur+" != "+NOBJNM_off, 0, fil_log)
+                
+                    # ** Handle NIS_EDITOR_COMMENT       
+                    # * search for existing string
+                    NISECo_cur = encodeIfUnicode(row[3])         
+                    # Assuming form "GNDB=13 Munding", i.e. some string + "GNDB=<int> <string>" + more string, so I split tail on ' 's  
+                    if "GNDB" in NISECo_cur:
+                        num_pos1 = NISECo_cur.find("GNDB")    
+                        num_poseq = NISECo_cur.find("=",num_pos1)   
+                        num_posfs = NISECo_cur.find(" ",num_poseq)
+                        if " " in NISECo_cur[num_posfs+1:]:
+                            num_pos2 = NISECo_cur.find(" ",num_posfs+1)
                         else:
-                            arcEC.SetMsg("     OBJNAM   !!!201  "+OBJNAM_cur+" != "+OBJNAM_off,0)
-                            
-                # * NOBJNM
-                if NOBJNM_off != None and len(NOBJNM_off) > 1: # official NOBJNM is a valid data
-                    if (NOBJNM_off != NOBJNM_cur): # There is a need for update...
-                        if bolOverwrite or NOBJNM_cur == "" or NOBJNM_cur == None: # Edits are allowed. XXX introduce 'Lock'
-                            arcEC.SetMsg("     NOBJNM   <<<   : "+NOBJNM_cur+" << "+NOBJNM_off,0)
-                            row[2] = NOBJNM_off
-                            bolChanges = True
-                        else:                            
-                            arcEC.SetMsg("     NOBJNM   !!!202  "+NOBJNM_cur+" != "+NOBJNM_off,0)
-                                            
-                # ** Handle NIS_EDITOR_COMMENT       
-                # * search for existing string
-                NISECo_cur = encodeIfUnicode(row[3])         
-                # Assuming form "GNDB=13 Munding", i.e. some string + "GNDB=<int> <string>" + more string, so I split tail on ' 's  
-                if "GNDB" in NISECo_cur:
-                    num_pos1 = NISECo_cur.find("GNDB")    
-                    num_poseq = NISECo_cur.find("=",num_pos1)   
-                    num_posfs = NISECo_cur.find(" ",num_poseq)
-                    if " " in NISECo_cur[num_posfs+1:]:
-                        num_pos2 = NISECo_cur.find(" ",num_posfs+1)
-                    else:
-                        num_pos2 = len(NISECo_cur)
-                    if NISECo_cur[num_pos1:num_pos2][-1] in (",",";"): # if last is , then move 1
+                            num_pos2 = len(NISECo_cur)
+                        if NISECo_cur[num_pos1:num_pos2][-1] in (",",";"): # if last is , then move 1
                         num_pos2 -= 1 
-                    str_head = NISECo_cur[:num_pos1]
-                    str_GNDB = NISECo_cur[num_pos1:num_pos2]
-                    str_tail = NISECo_cur[num_pos2:]
-                    lst_NISECo_cur = [str_head,str_GNDB,str_tail]
-                    del num_pos1, num_poseq, num_posfs, num_pos2, str_head, str_GNDB, str_tail
-                else:
-                    NISECo_cur = NISECo_cur.replace("None","") # to get rid of 'None' as a string
-                    lst_NISECo_cur = ["",NISECo_cur,""]
-                    
-                # * find official GNDB= ...
-                num_NT = row[4]
-                NISECo_off = Make_NT(num_NT)
+                        str_head = NISECo_cur[:num_pos1]
+                        str_GNDB = NISECo_cur[num_pos1:num_pos2]
+                        str_tail = NISECo_cur[num_pos2:]
+                        lst_NISECo_cur = [str_head,str_GNDB,str_tail]
+                        del num_pos1, num_poseq, num_posfs, num_pos2, str_head, str_GNDB, str_tail
+                    else:
+                        NISECo_cur = NISECo_cur.replace("None","") # to get rid of 'None' as a string
+                        lst_NISECo_cur = ["",NISECo_cur,""]
                 
-                arcEC.SetMsg("     NISECo GNDB    : "+str(NISECo_off),0) 
-                arcEC.SetMsg("     NISECo Names*  : "+str(lst_NISECo_cur),0)
+                    # * find official GNDB= ...
+                    num_NT = row[4]
+                    NISECo_off = Make_NT(num_NT, fil_log)
                 
-                # * NIS_EDITORS_COMMENT
-                if NISECo_off != None and len(NISECo_off) > 1: # official NISECo_off is a valid data
-                    if lst_NISECo_cur[1].split(" ")[0] != NISECo_off.split(" ")[0]: # There is a need for update... Only compare the "GNDB=nn" part, as the rest is prone to have anoying speial chars
+                    arcEC.SetMsg("     NISECo GNDB    : "+str(NISECo_off), 0, fil_log) 
+                    arcEC.SetMsg("     NISECo Names*  : "+str(lst_NISECo_cur), 0, fil_log)
+                
+                    # * NIS_EDITORS_COMMENT
+                    if NISECo_off != None and len(NISECo_off) > 1: # official NISECo_off is a valid data
+                        if lst_NISECo_cur[1].split(" ")[0] != NISECo_off.split(" ")[0]: # There is a need for update... Only compare the "GNDB=nn" part, as the rest is prone to have anoying speial chars
                         lst_NISECo_new = list(lst_NISECo_cur) # list() to avoid _new and _cur to be same actual object ...
                         lst_NISECo_new[1] = NISECo_off # replace current GNDB with official
                         NISECo_new = lst_NISECo_new[0]+" "+lst_NISECo_new[1]+" "+lst_NISECo_new[2] # add it back together
@@ -438,30 +456,38 @@ def GNDBruninTOC_execute(parameters, messages):
                         if bolOverwrite or (len(lst_NISECo_cur[1]) < 1): # Edits are allowed. XXX introduce 'Lock'
                             row[3] = NISECo_new
                             bolChanges = True
-                            arcEC.SetMsg("     NISECo   <<<   : " + NISECo_cur + " << "+NISECo_new,0)
+                            arcEC.SetMsg("     NISECo   <<<   : " + NISECo_cur + " << "+NISECo_new, 0, fil_log)
                         else:
-                            arcEC.SetMsg(" !!!203 NISECo c!=n : " + NISECo_cur + " != "+NISECo_new,0)
-                    
-                # *** Write back to row
-                if bolChanges:
-                    cursor.updateRow(row)
-                    num_row_changed += 1
-                    
-                # *** -------------------------------------------------------------------------- End of real business ------
-                    
-            else:
-                arcEC.SetMsg(" !!!204 No GNDB Hit : "+str(row[0]),0)
+                            arcEC.SetMsg(" !!!203 NISECo c!=n : " + NISECo_cur + " != "+NISECo_new, 0, fil_log)
+                
+                    # *** Write back to row
+                    if bolChanges:
+                        cursor.updateRow(row)
+                        num_row_changed += 1
+                
+                    # *** -------------------------------------------------------------------------- End of real business ------
+                
+                else:
+                    arcEC.SetMsg(" !!!204 No GNDB Hit : "+str(row[0]), 0, fil_log)
+                
+            except:
+                arcEC.SetMsg(" !!!205 Row fail (adding to fail list) : ", 0, fil_log)
+                arcEC.SetMsg("    Filed on NID : "+str(row[0]), 0, fil_log)
+                lst_Fails.append(str(row[0]))
+	
                 
         # ** End of - Process row.
     
-    arcEC.SetMsg("Processed rows      : "+str(num_row_count),0)
-    arcEC.SetMsg("    Changed rows    : "+str(num_row_changed),0)
+    arcEC.SetMsg("Processed rows      : "+str(num_row_count), 0, fil_log)
+    arcEC.SetMsg("    Changed rows    : "+str(num_row_changed), 0, fil_log)
+    arcEC.SetMsg("    Filed rows      : "+str(len(lstFails), 0, fil_log)
     
     # *** All Done - Cleaning up ***
     
     timEnd = datetime.now()
     durRun = timEnd-timStart
-    arcEC.SetMsg("Python stript duration (h:mm:ss.dddddd): "+str(durRun),0)
+    arcEC.SetMsg("Python script completed successfully:  <"+str(timEnd)+">", 0, fil_log)
+    arcEC.SetMsg("Python stript duration (h:mm:ss.dddddd): "+str(durRun), 0, fil_log)
     
     return 0
 
