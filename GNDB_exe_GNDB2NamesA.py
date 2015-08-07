@@ -75,14 +75,14 @@ def GNDBruninTOC_exe_G2N(parameters, messages):
 
     strExecuName  = "GNDBruninTOC_exeG2N()"
     strExecuVer   = "0.4.0" # Introducing logfile
-    strExecuBuild = "'150807,x"
+    strExecuBuild = "'150807.x"
 
     timStart = datetime.now()
         
         
     # *** Begin
     fil_log = open("GNDB_execute.log", "w")
-    arcEC.SetMsg("Exec. '"+strExecuName+"' ver. "+strExecuVer+" build "+strExecuBuild+" <"+str(timStart)+">", 0, fil_log)
+    arcEC.SetMsg("Exec. '"+strExecuName+"' ver. "+strExecuVer+" build "+strExecuBuild, 0, fil_log)
     
     lstFails = list()
     
@@ -183,13 +183,54 @@ def GNDBruninTOC_exe_G2N(parameters, messages):
         for row in cursor:
             
             try:
-                arcEC.SetMsg("Trying    : "+str(row[0]), 0, fil_log)                
+                ##arcEC.SetMsg("Trying    : "+str(row[0]), 0, fil_log)                
                 if row[0] in dic_GNDB.keys():
                     num_row_count += 1
                     bolChanges = False
-                    arcEC.SetMsg(" Hit GNDB           : "+str(row[0]), 0, fil_log)
+                    arcEC.SetMsg("Hit GNDB           : "+str(row[0]), 0, fil_log)
                 
                     # *** Process the row <-------------------------------- This is where the real business is going on ------
+                    # ** Handle names (OBJNAM & NOBJNM)
+                    # * Calculate the official values from GNDB
+                    lstOfficialNames, listOfLocks = CorrectNaming(strMode, dic_GNDB[row[0]])
+                    OBJNAM_off = arcEC.encodeIfUnicode(lstOfficialNames[1])
+                    NOBJNM_off = arcEC.encodeIfUnicode(lstOfficialNames[2])
+                    # * read current values from GNDB
+                    OBJNAM_cur = arcEC.encodeIfUnicode(row[1])
+                    NOBJNM_cur = arcEC.encodeIfUnicode(row[2])
+                    # Convert all Null's to empty string
+                    if OBJNAM_off == "None": OBJNAM_off = ""
+                    if NOBJNM_off == "None": NOBJNM_off = ""
+                    if OBJNAM_cur == "None": OBJNAM_cur = ""
+                    if NOBJNM_cur == "None": NOBJNM_cur = ""                
+                
+                    arcEC.SetMsg("    Name GNDB      : ("+str(OBJNAM_off)+" / "+str(NOBJNM_off)+")", 0, fil_log)
+                    arcEC.SetMsg("    Name NamesA    : ("+str(OBJNAM_cur)+" / "+str(NOBJNM_cur)+")", 0, fil_log)
+                
+                    # * OBJNAM
+                    if OBJNAM_off != None and len(OBJNAM_off) > 1: # official OBJNAM is a valid data
+                        if (OBJNAM_off != OBJNAM_cur): # There is a need for update...
+                            if bolOverwrite or OBJNAM_cur == "" or OBJNAM_cur == None:
+                                arcEC.SetMsg("     OBJNAM   <<<   : "+OBJNAM_cur+" << "+OBJNAM_off, 0, fil_log)
+                                row[1] = OBJNAM_off
+                                bolChanges = True
+                            else:
+                                arcEC.SetMsg("     OBJNAM differs : "+OBJNAM_cur+" != "+OBJNAM_off, 0, fil_log)
+                
+                    # * NOBJNM
+                    if NOBJNM_off != None and len(NOBJNM_off) > 1: # official NOBJNM is a valid data
+                        if (NOBJNM_off != NOBJNM_cur): # There is a need for update...
+                            if bolOverwrite or NOBJNM_cur == "" or NOBJNM_cur == None:
+                                arcEC.SetMsg("     NOBJNM   <<<   : "+NOBJNM_cur+" << "+NOBJNM_off, 0, fil_log)
+                                row[2] = NOBJNM_off
+                                bolChanges = True
+                            else:                            
+                                arcEC.SetMsg("     NOBJNM differs : "+NOBJNM_cur+" != "+NOBJNM_off, 0, fil_log)
+                
+                    # * Write back to row
+                    if bolChanges:
+                        cursor.updateRow(row)
+                        num_row_changed += 1
                 
                     # *** End of - Process row <-------------------------------------------------- End of real business ------
                 
@@ -201,6 +242,10 @@ def GNDBruninTOC_exe_G2N(parameters, messages):
                 arcEC.SetMsg("    Filed on NID : "+str(row[0]), 0, fil_log)
                 lst_Fails.append(str(row[0]))
     
+    arcEC.SetMsg("Processed rows      : "+str(num_row_count), 0, fil_log)
+    arcEC.SetMsg("    Changed rows    : "+str(num_row_changed), 0, fil_log)
+    arcEC.SetMsg("    Filed rows      : "+str(len(lstFails)), 0, fil_log)
+        
     return 0
     # *** End of function GNDBruninTOC()
 
