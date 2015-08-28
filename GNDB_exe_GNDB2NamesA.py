@@ -74,8 +74,8 @@ def GNDBruninTOC_exe_G2N(parameters, messages):
     from datetime import datetime # for datetime.now()
 
     strExecuName  = "GNDBruninTOC_exeG2N()"
-    strExecuVer   = "0.4.0" # Introducing logfile
-    strExecuBuild = "'150807.x"
+    strExecuVer   = "0.4.1" # Introducing logfile
+    strExecuBuild = "'150828.x"
 
     timStart = datetime.now()
         
@@ -176,6 +176,7 @@ def GNDBruninTOC_exe_G2N(parameters, messages):
     arcEC.SetMsg("\nRunning through the rows ...", 0, fil_log)
     arcEC.SetMsg("Overwrite: "+str(bolOverwrite), 0, fil_log)
     lst_fields_we_want = ["GST_NID","OBJNAM","NOBJNM","NIS_EDITOR_COMMENT","NAMETYPE"]
+    lst_Fails = list()
     
     num_row_count = 0
     num_row_changed = 0
@@ -212,7 +213,7 @@ def GNDBruninTOC_exe_G2N(parameters, messages):
                         if (OBJNAM_off != OBJNAM_cur): # There is a need for update...
                             if bolOverwrite or OBJNAM_cur == "" or OBJNAM_cur == None:
                                 arcEC.SetMsg("     OBJNAM   <<<   : "+OBJNAM_cur+" << "+OBJNAM_off, 0, fil_log)
-                                row[1] = OBJNAM_off
+                                row[1] = lstOfficialNames[1] # try to avoid utf8 error
                                 bolChanges = True
                             else:
                                 arcEC.SetMsg("     OBJNAM differs : "+OBJNAM_cur+" != "+OBJNAM_off, 0, fil_log)
@@ -222,7 +223,7 @@ def GNDBruninTOC_exe_G2N(parameters, messages):
                         if (NOBJNM_off != NOBJNM_cur): # There is a need for update...
                             if bolOverwrite or NOBJNM_cur == "" or NOBJNM_cur == None:
                                 arcEC.SetMsg("     NOBJNM   <<<   : "+NOBJNM_cur+" << "+NOBJNM_off, 0, fil_log)
-                                row[2] = NOBJNM_off
+                                row[2] = lstOfficialNames[2] # try to avoid utf8 error
                                 bolChanges = True
                             else:                            
                                 arcEC.SetMsg("     NOBJNM differs : "+NOBJNM_cur+" != "+NOBJNM_off, 0, fil_log)
@@ -244,9 +245,9 @@ def GNDBruninTOC_exe_G2N(parameters, messages):
     
     arcEC.SetMsg("Processed rows      : "+str(num_row_count), 0, fil_log)
     arcEC.SetMsg("    Changed rows    : "+str(num_row_changed), 0, fil_log)
-    arcEC.SetMsg("    Filed rows      : "+str(len(lstFails)), 0, fil_log)
+    arcEC.SetMsg("    Failed rows     : "+str(len(lstFails)), 0, fil_log)
         
-    return 0
+    return len(lstFails)
     # *** End of function GNDBruninTOC()
 
 if __name__ == "__main__":
